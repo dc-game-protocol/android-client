@@ -19,6 +19,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+
 import ca.bcit.android_client.PayloadValues;
 import ca.bcit.android_client.RequestContexts;
 import ca.bcit.android_client.RequestTypes;
@@ -67,8 +69,12 @@ public class ServerConnection {
         @Override
         protected Boolean doInBackground(Void... voids) {
             try {
-                in = new DataInputStream(new BufferedInputStream(s.getInputStream()));
-                in.close();
+                buffer.clear();
+                in = new DataInputStream(s.getInputStream());
+                int readc = in.read(buffer.array());
+                Log.w("Count: ", String.valueOf(readc));
+                Log.w("Read: ", StandardCharsets.UTF_8.decode(buffer).toString());
+                //in.close();
                 return true;
             } catch (IOException e) {
                 e.printStackTrace();
@@ -94,13 +100,14 @@ public class ServerConnection {
         @Override
         protected Boolean doInBackground(Void... voids) {
             try {
+                buffer.clear();
                 out = new DataOutputStream(new BufferedOutputStream(s.getOutputStream()));
                 for (int i = 0; i < this.arr.length; i++) {
                     buffer.put((byte)arr[i]);
                 }
                 out.write(buffer.array(), 0, this.arr.length);
-                buffer.clear();
-                out.close();
+                out.flush();
+               // out.close();
                 return true;
             } catch (IOException e) {
                 e.printStackTrace();
@@ -132,6 +139,7 @@ public class ServerConnection {
                     PayloadValues.PROTOCOL_VERSION.getVal(),
                     PayloadValues.ROCK_PAPER_SCISSORS_ID.getVal()
                 });
+                read();
                 return true;
             } catch (IOException e) {
                 e.printStackTrace();
