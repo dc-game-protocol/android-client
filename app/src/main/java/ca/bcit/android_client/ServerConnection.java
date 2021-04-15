@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.widget.TextView;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -13,6 +14,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -40,6 +42,8 @@ public class ServerConnection {
     DataInputStream in;
     DataOutputStream out;
     ByteBuffer buffer;
+    static ServerConnection sc;
+    int uid;
 
     public ServerConnection(String ipaddress, int port, Context context, Intent intent) {
         this.ipaddress = ipaddress;
@@ -48,24 +52,34 @@ public class ServerConnection {
         this.intent = intent;
         buffer = ByteBuffer.allocate(10);
         this.connect();
+        sc = this;
+    }
+
+    public static ServerConnection getServerConnection() {
+        return sc;
     }
 
     public void connect() {
         new AsyncQuery().execute();
     }
 
-    public void read() {
-        new ReadQuery().execute();
+    public void read(readCallback rc) {
+        new ReadQuery(rc).execute();
     }
 
     public void write(int[] arr) {
         new WriteQuery(arr).execute();
     }
 
-    /**
-     * Makes a service call to the API to initialize the list of articles.
-     */
+    public interface readCallback {
+        void doCallback(ByteBuffer buffer);
+    }
+
     private class ReadQuery extends AsyncTask<Void, Void, Boolean> {
+        readCallback rc;
+        public ReadQuery(readCallback rc) {
+            this.rc = rc;
+        }
         @Override
         protected Boolean doInBackground(Void... voids) {
             try {
@@ -84,13 +98,10 @@ public class ServerConnection {
 
         @Override
         protected void onPostExecute(Boolean success) {
-
+            rc.doCallback(buffer);
         }
     }
 
-    /**
-     * Makes a service call to the API to initialize the list of articles.
-     */
     private class WriteQuery extends AsyncTask<Void, Void, Boolean> {
         int[] arr;
         public WriteQuery(int[] arr) {
@@ -105,6 +116,7 @@ public class ServerConnection {
                 for (int i = 0; i < this.arr.length; i++) {
                     buffer.put((byte)arr[i]);
                 }
+                Log.w("Write count: ", String.valueOf(this.arr.length));
                 out.write(buffer.array(), 0, this.arr.length);
                 out.flush();
                // out.close();
@@ -121,9 +133,6 @@ public class ServerConnection {
         }
     }
 
-    /**
-     * Makes a service call to the API to initialize the list of articles.
-     */
     private class AsyncQuery extends AsyncTask<Void, Void, Boolean> {
         @Override
         protected Boolean doInBackground(Void... voids) {
@@ -139,7 +148,7 @@ public class ServerConnection {
                     PayloadValues.PROTOCOL_VERSION.getVal(),
                     PayloadValues.ROCK_PAPER_SCISSORS_ID.getVal()
                 });
-                read();
+                read((ByteBuffer buffer) -> {});
                 return true;
             } catch (IOException e) {
                 e.printStackTrace();

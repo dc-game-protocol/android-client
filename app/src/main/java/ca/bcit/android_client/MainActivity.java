@@ -19,6 +19,7 @@ public class MainActivity extends AppCompatActivity {
     EditText ipEditText;
     EditText portEditText;
     Button rpsButton;
+    ServerConnection sc;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
             return -1;
         }
         int port = Integer.parseInt(portText);
-        ServerConnection sc = new ServerConnection(ipaddress, port, MainActivity.this, intent);
+        sc = new ServerConnection(ipaddress, port, MainActivity.this, intent);
         return 1;
     }
 
