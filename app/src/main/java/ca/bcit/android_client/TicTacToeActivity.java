@@ -53,13 +53,13 @@ public class TicTacToeActivity extends AppCompatActivity {
     }
 
     public void clickTile(View view, int pos) {
-        sc.write(new int[]{
-            0,0,0,0,
+        int[] arr = ServerConnection.prefixUID(new int[]{
             RequestTypes.GAME_ACTION.getVal(),
             RequestContexts.MAKE_MOVE.getVal(),
             1,
             PayloadValues.MOVE_ROCK.getVal(),
-        });
+        }, uid);
+        sc.write(arr);
         sc.read(this::handleResponse);
     }
 
@@ -173,12 +173,12 @@ public class TicTacToeActivity extends AppCompatActivity {
     }
 
     public void quit(View view) {
-        sc.write(new int[]{
-            0,0,0,0,
+        int[] arr = ServerConnection.prefixUID(new int[]{
             RequestTypes.META_ACTION.getVal(),
             RequestContexts.QUIT.getVal(),
             0,
-        });
+        }, uid);
+        sc.write(arr);
         sc.disconnect();
         finish();
     }

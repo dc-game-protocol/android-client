@@ -63,6 +63,20 @@ public class ServerConnection {
         return sc;
     }
 
+    public static int[] prefixUID(int[] arr, int uid) {
+        int[] newArr = new int[arr.length + 4];
+        for (int i = 3; i >= 0; i--) {
+            int thisByte = uid & 0b1111;
+            newArr[i] = thisByte;
+            uid <<= 4;
+        }
+        for (int i = 4; i < newArr.length; i++) {
+            newArr[i] = arr[i-4];
+            Log.w("??", String.valueOf(arr[i-4]));
+        }
+        return newArr;
+    }
+
     public void connect() {
         new AsyncQuery().execute();
     }

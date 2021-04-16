@@ -47,6 +47,7 @@ public class RockPaperScissorsActivity extends AppCompatActivity {
         for (int i = 0; i < length; i++) {
             payload[i] = buffer.get(3 + i);
         }
+
         if (status == ResponseTypes.SUCCESS.getVal()) {
             if (context == ResponseContexts.CONFIRMATION.getVal()) {
                 message.setText("Valid game!");
@@ -108,13 +109,14 @@ public class RockPaperScissorsActivity extends AppCompatActivity {
         rockButton.setEnabled(false);
         scissorsButton.setEnabled(false);
         paperButton.setEnabled(false);
-        sc.write(new int[]{
-            0,0,0,0,
+        int[] arr = ServerConnection.prefixUID(new int[]{
             RequestTypes.GAME_ACTION.getVal(),
             RequestContexts.MAKE_MOVE.getVal(),
             1,
             move,
-        });
+        }, uid);
+
+        sc.write(arr);
         sc.read(this::handleResponse);
     }
 
@@ -131,12 +133,12 @@ public class RockPaperScissorsActivity extends AppCompatActivity {
     }
 
     public void quit(View view) {
-        sc.write(new int[]{
-            0,0,0,0,
+        int[] arr = ServerConnection.prefixUID(new int[]{
             RequestTypes.META_ACTION.getVal(),
             RequestContexts.QUIT.getVal(),
             0,
-        });
+        }, uid);
+        sc.write(arr);
         sc.disconnect();
         finish();
     }
