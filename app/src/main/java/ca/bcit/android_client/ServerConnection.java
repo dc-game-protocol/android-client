@@ -1,37 +1,18 @@
 package ca.bcit.android_client;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.widget.TextView;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Serializable;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-
-import ca.bcit.android_client.PayloadValues;
-import ca.bcit.android_client.RequestContexts;
-import ca.bcit.android_client.RequestTypes;
-import ca.bcit.android_client.ResponseContexts;
-import ca.bcit.android_client.ResponseTypes;
-
-import androidx.appcompat.app.AppCompatActivity;
-
-import static androidx.core.content.ContextCompat.startActivity;
 
 public class ServerConnection {
     private static String ipaddress;
@@ -43,12 +24,14 @@ public class ServerConnection {
     DataOutputStream out;
     ByteBuffer buffer;
     static ServerConnection sc;
+    static boolean voice;
 
-    public ServerConnection(String ipaddress, int port, Context context, Intent intent) {
+    public ServerConnection(String ipaddress, int port, Context context, Intent intent, boolean voice) {
         ServerConnection.ipaddress = ipaddress;
         ServerConnection.port = port;
         ServerConnection.context = context;
         ServerConnection.intent = intent;
+        ServerConnection.voice = voice;
         buffer = ByteBuffer.allocate(130);
         this.connect();
         sc = this;
@@ -58,7 +41,7 @@ public class ServerConnection {
         if (s.isConnected()) {
             return sc;
         } else {
-            sc = new ServerConnection(ipaddress, port, context, intent);
+            sc = new ServerConnection(ipaddress, port, context, intent, voice);
         }
         return sc;
     }
@@ -182,7 +165,12 @@ public class ServerConnection {
                 read((ByteBuffer buffer) -> {
                     handleResponse(buffer);
                     //if (uid > 0) {
-                        Log.w("uid", String.valueOf(uid));
+                        if (voice) {
+                            VoiceChat vc = new VoiceChat();
+                            vc.setIpAddress(ipaddress);
+                            vc.setPort(port);
+                            vc.start();
+                        }
                         intent.putExtra("uid", this.uid);
                         context.startActivity(intent);
                    // }

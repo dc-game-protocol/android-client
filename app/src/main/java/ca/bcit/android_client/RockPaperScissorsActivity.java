@@ -3,20 +3,11 @@ package ca.bcit.android_client;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-
-import ca.bcit.android_client.ServerConnection;
-import ca.bcit.android_client.PayloadValues;
-import ca.bcit.android_client.RequestContexts;
-import ca.bcit.android_client.RequestTypes;
-import ca.bcit.android_client.ResponseContexts;
-import ca.bcit.android_client.ResponseTypes;
 
 public class RockPaperScissorsActivity extends AppCompatActivity {
     Button rockButton;
@@ -140,6 +131,7 @@ public class RockPaperScissorsActivity extends AppCompatActivity {
         }, uid);
         sc.write(arr);
         sc.disconnect();
+        VoiceChat.stop();
         finish();
     }
 }

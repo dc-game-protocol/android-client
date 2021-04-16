@@ -9,18 +9,13 @@ import android.widget.TextView;
 
 import java.nio.ByteBuffer;
 
-import ca.bcit.android_client.ServerConnection;
-import ca.bcit.android_client.PayloadValues;
-import ca.bcit.android_client.RequestContexts;
-import ca.bcit.android_client.RequestTypes;
-import ca.bcit.android_client.ResponseContexts;
-import ca.bcit.android_client.ResponseTypes;
-
 public class TicTacToeActivity extends AppCompatActivity {
     Button[] buttons = new Button[9];
     ServerConnection sc;
     TextView message;
     int uid;
+    int team;
+    char teamChar = ' ';
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,7 +113,7 @@ public class TicTacToeActivity extends AppCompatActivity {
                 message.setText("Unknown or unused response");
             }
             if (context == ResponseContexts.GAME_ACTION.getVal()) {
-                buttons[payload[0]].setText("X");
+                buttons[payload[0]].setText(teamChar);
                 message.setText("Awaiting other player's move...");
             }
             turnOffAllButtons();
@@ -129,10 +124,12 @@ public class TicTacToeActivity extends AppCompatActivity {
         }
         if (status == ResponseTypes.UPDATE.getVal()) {
             if (context == ResponseContexts.START_GAME.getVal()) {
+                team = payload[0];
+                teamChar = payload[0] == 1 ? 'X' : payload[0] == 2 ? 'O' : ' ';
                 message.setText("Starting game...");
             }
             if (context == ResponseContexts.MOVE_MADE.getVal()) {
-                buttons[payload[0]].setText("O");
+                buttons[payload[0]].setText(teamChar == 'X' ? 'O' : 'X');
                 message.setText("Move made by opponent.");
             }
             if (context == ResponseContexts.END_OF_GAME.getVal()) {
@@ -180,6 +177,7 @@ public class TicTacToeActivity extends AppCompatActivity {
         }, uid);
         sc.write(arr);
         sc.disconnect();
+        VoiceChat.stop();
         finish();
     }
 }

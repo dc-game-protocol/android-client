@@ -1,25 +1,23 @@
 package ca.bcit.android_client;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
-import android.content.Context;
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.text.Editable;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-
-import org.w3c.dom.Text;
-
-import ca.bcit.android_client.ServerConnection;
 
 public class MainActivity extends AppCompatActivity {
     EditText ipEditText;
     EditText portEditText;
     Button rpsButton;
     ServerConnection sc;
+    boolean voice;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
         ipEditText = findViewById(R.id.iptext);
         portEditText = findViewById(R.id.porttext);
         rpsButton = findViewById(R.id.rpsButton);
+        voice = false;
     }
 
     private int connectToServer(Intent intent) {
@@ -42,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (NumberFormatException e) {
             return -1;
         }
-        sc = new ServerConnection(ipaddress, port, MainActivity.this, intent);
+        sc = new ServerConnection(ipaddress, port, MainActivity.this, intent, voice);
         return 1;
     }
 
@@ -60,5 +59,12 @@ public class MainActivity extends AppCompatActivity {
         if (connectionStatus <= 0) {
             return;
         }
+    }
+
+    public void enableVoice(View view) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1234);
+        }
+        voice = !voice;
     }
 }
