@@ -39,4 +39,12 @@
         android:text="Rock Paper Scissors"
         android:textSize="28dp" />
 
+    <Button
+        android:id="@+id/tttButton"
+        android:layout_width="291dp"
+        android:layout_height="103dp"
+        android:onClick="startTicTacToe"
+        android:text="Tic Tac Toe"
+        android:textSize="28dp" />
+
 </LinearLayout>

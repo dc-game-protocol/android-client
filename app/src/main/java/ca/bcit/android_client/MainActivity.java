@@ -36,13 +36,26 @@ public class MainActivity extends AppCompatActivity {
         if (ipaddress.equals("") || portText.equals("")) {
             return -1;
         }
-        int port = Integer.parseInt(portText);
+        int port;
+        try {
+            port = Integer.parseInt(portText);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
         sc = new ServerConnection(ipaddress, port, MainActivity.this, intent);
         return 1;
     }
 
     public void startRockpaperScissors (View view){
         Intent intent = new Intent(this, RockPaperScissorsActivity.class);
+        int connectionStatus = connectToServer(intent);
+        if (connectionStatus <= 0) {
+            return;
+        }
+    }
+
+    public void startTicTacToe (View view){
+        Intent intent = new Intent(this, TicTacToeActivity.class);
         int connectionStatus = connectToServer(intent);
         if (connectionStatus <= 0) {
             return;

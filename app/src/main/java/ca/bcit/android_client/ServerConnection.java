@@ -34,28 +34,32 @@ import androidx.appcompat.app.AppCompatActivity;
 import static androidx.core.content.ContextCompat.startActivity;
 
 public class ServerConnection {
-    private String ipaddress;
-    private int port;
-    private final Context context;
-    private final Intent intent;
-    Socket s;
+    private static String ipaddress;
+    private static int port;
+    private static Context context;
+    private static Intent intent;
+    static Socket s;
     DataInputStream in;
     DataOutputStream out;
     ByteBuffer buffer;
     static ServerConnection sc;
-    int uid;
 
     public ServerConnection(String ipaddress, int port, Context context, Intent intent) {
-        this.ipaddress = ipaddress;
-        this.port = port;
-        this.context = context;
-        this.intent = intent;
+        ServerConnection.ipaddress = ipaddress;
+        ServerConnection.port = port;
+        ServerConnection.context = context;
+        ServerConnection.intent = intent;
         buffer = ByteBuffer.allocate(10);
         this.connect();
         sc = this;
     }
 
     public static ServerConnection getServerConnection() {
+        if (s.isConnected()) {
+            return sc;
+        } else {
+            sc = new ServerConnection(ipaddress, port, context, intent);
+        }
         return sc;
     }
 
@@ -69,6 +73,14 @@ public class ServerConnection {
 
     public void write(int[] arr) {
         new WriteQuery(arr).execute();
+    }
+
+    public void disconnect() {
+        try {
+            s.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public interface readCallback {
@@ -134,6 +146,8 @@ public class ServerConnection {
     }
 
     private class AsyncQuery extends AsyncTask<Void, Void, Boolean> {
+        int uid;
+
         @Override
         protected Boolean doInBackground(Void... voids) {
             try {
@@ -148,7 +162,14 @@ public class ServerConnection {
                     PayloadValues.PROTOCOL_VERSION.getVal(),
                     PayloadValues.ROCK_PAPER_SCISSORS_ID.getVal()
                 });
-                read((ByteBuffer buffer) -> {});
+                read((ByteBuffer buffer) -> {
+                    handleResponse(buffer);
+                    //if (uid > 0) {
+                        Log.w("uid", String.valueOf(uid));
+                        intent.putExtra("uid", this.uid);
+                        context.startActivity(intent);
+                   // }
+                });
                 return true;
             } catch (IOException e) {
                 e.printStackTrace();
@@ -158,8 +179,21 @@ public class ServerConnection {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success) {
-                context.startActivity(intent);
+
+        }
+
+        public void handleResponse(ByteBuffer buffer) {
+            byte status = buffer.get(0);
+            byte context = buffer.get(1);
+            byte length = buffer.get(2);
+            int uid = buffer.getInt(3);
+
+            if (status == ResponseTypes.SUCCESS.getVal()) {
+                if (context == ResponseContexts.CONFIRMATION.getVal()) {
+                    if (length >= 4) {
+                        this.uid = uid;
+                    }
+                }
             }
         }
     }
