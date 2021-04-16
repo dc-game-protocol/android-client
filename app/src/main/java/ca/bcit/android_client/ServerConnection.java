@@ -49,7 +49,7 @@ public class ServerConnection {
         ServerConnection.port = port;
         ServerConnection.context = context;
         ServerConnection.intent = intent;
-        buffer = ByteBuffer.allocate(10);
+        buffer = ByteBuffer.allocate(130);
         this.connect();
         sc = this;
     }
@@ -72,7 +72,6 @@ public class ServerConnection {
         }
         for (int i = 4; i < newArr.length; i++) {
             newArr[i] = arr[i-4];
-            Log.w("??", String.valueOf(arr[i-4]));
         }
         return newArr;
     }
@@ -124,7 +123,11 @@ public class ServerConnection {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            rc.doCallback(buffer);
+            try {
+                rc.doCallback(buffer);
+            } catch(Exception e) {
+                Log.e("Error", e.toString());
+            }
         }
     }
 
