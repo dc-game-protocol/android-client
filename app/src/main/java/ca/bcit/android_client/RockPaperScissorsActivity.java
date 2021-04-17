@@ -49,7 +49,6 @@ public class RockPaperScissorsActivity extends AppCompatActivity {
         for (int i = 0; i < length; i++) {
             payload[i] = buffer.get(3 + i);
         }
-        toggleButtons(true);
         if (status == ResponseTypes.SUCCESS.getVal()) {
             if (context == ResponseContexts.CONFIRMATION.getVal()) {
                 message.setText("Valid game! Awaiting other player...");
@@ -63,10 +62,15 @@ public class RockPaperScissorsActivity extends AppCompatActivity {
             if (context == ResponseContexts.GAME_ACTION.getVal()) {
                 message.setText("Move made! Awaiting other player's move...");
             }
-            sc.read((ByteBuffer buff) -> {
-                handleResponse(buff);
-            });
-            toggleButtons(false);
+            if (!ServerConnection.s.isClosed()) {
+                sc.read((ByteBuffer buff) -> {
+                    handleResponse(buff);
+                });
+                toggleButtons(false);
+            }
+            else {
+                return;
+            }
         }
         if (status == ResponseTypes.UPDATE.getVal()) {
             if (context == ResponseContexts.START_GAME.getVal()) {

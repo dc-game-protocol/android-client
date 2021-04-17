@@ -20,7 +20,7 @@ public class ServerConnection {
     private static int port;
     private static Context context;
     private static Intent intent;
-    static Socket s;
+    public static Socket s;
     DataInputStream in;
     DataOutputStream out;
     ByteBuffer buffer;
@@ -41,7 +41,7 @@ public class ServerConnection {
     }
 
     public static ServerConnection getServerConnection() {
-        if (s.isConnected()) {
+        if (!s.isClosed()) {
             return sc;
         } else {
             sc = new ServerConnection(ipaddress, port, context, intent, voice, gameId);

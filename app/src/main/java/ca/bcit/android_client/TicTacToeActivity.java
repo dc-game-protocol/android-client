@@ -124,9 +124,11 @@ public class TicTacToeActivity extends AppCompatActivity {
                 message.setText("Move made! Awaiting other player's move...");
             }
             toggleButtons(false);
-            sc.read((ByteBuffer buff) -> {
-                handleResponse(buff);
-            });
+            if (!ServerConnection.s.isClosed()) {
+                sc.read((ByteBuffer buff) -> {
+                    handleResponse(buff);
+                });
+            }
         }
         if (status == ResponseTypes.UPDATE.getVal()) {
             if (context == ResponseContexts.START_GAME.getVal()) {
@@ -150,7 +152,7 @@ public class TicTacToeActivity extends AppCompatActivity {
                 toggleButtons(false);
                 int winLoss = payload[0];
                 String winLossMsg = (winLoss == 1 ? "Win!" : winLoss == 2 ? "Lose!" : "Tie!");
-
+                buttons[payload[1]].setText(String.valueOf(teamChar == 'X' ? 'O' : 'X'));
                 message.setText("GAME OVER\n" +winLossMsg);
             }
             if (context == ResponseContexts.OPPONENT_DISCONNECTED.getVal()) {
@@ -182,6 +184,7 @@ public class TicTacToeActivity extends AppCompatActivity {
         if (status == ResponseTypes.ACTION_OUT_OF_TURN.getVal()) {
             message.setText("Action out of turn");
         }
+        buffer.clear();
     }
 
     public void quit(View view) {
