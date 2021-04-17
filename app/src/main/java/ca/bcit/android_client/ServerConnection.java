@@ -153,7 +153,7 @@ public class ServerConnection {
         @Override
         protected Boolean doInBackground(Void... voids) {
             try {
-                InetSocketAddress isa = new InetSocketAddress("192.168.1.80", 2034);
+                InetSocketAddress isa = new InetSocketAddress(ipaddress, port);
                 s = new Socket();
                 s.connect(isa, 1000);
                 write(new int[]{
@@ -169,8 +169,8 @@ public class ServerConnection {
                     //if (uid > 0) {
                         if (voice) {
                             VoiceChat vc = new VoiceChat();
-                            vc.setIpAddress("192.168.1.80");
-                            vc.setPort(2034);
+                            vc.setIpAddress(ipaddress);
+                            vc.setPort(port);
                             vc.start(this.uid);
                         }
                         intent.putExtra("uid", this.uid);

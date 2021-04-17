@@ -72,7 +72,8 @@ public class RockPaperScissorsActivity extends AppCompatActivity {
             if (context == ResponseContexts.START_GAME.getVal()) {
                 toggleButtons(true);
                 message.setText("Starting game...");
-            }            if (context == ResponseContexts.END_OF_GAME.getVal()) {
+            }
+            if (context == ResponseContexts.END_OF_GAME.getVal()) {
                 toggleButtons(false);
                 int winLoss = payload[0];
                 int opponentMove = payload[1];
