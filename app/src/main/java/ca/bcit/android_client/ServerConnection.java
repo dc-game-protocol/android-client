@@ -65,10 +65,16 @@ public class ServerConnection {
     }
 
     public void read(readCallback rc) {
+        if (s.isClosed()) {
+            return;
+        }
         new ReadQuery(rc).execute();
     }
 
     public void write(int[] arr) {
+        if (s.isClosed()) {
+            return;
+        }
         new WriteQuery(arr).execute();
     }
 
