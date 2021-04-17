@@ -39,4 +39,20 @@
         android:text="Rock Paper Scissors"
         android:textSize="28dp" />
 
+    <Button
+        android:id="@+id/tttButton"
+        android:layout_width="291dp"
+        android:layout_height="103dp"
+        android:onClick="startTicTacToe"
+        android:text="Tic Tac Toe"
+        android:textSize="28dp" />
+
+    <Switch
+        android:id="@+id/switch1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="enableVoice"
+        android:textSize="24dp"
+        android:text="Enable Voice" />
+
 </LinearLayout>

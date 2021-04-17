@@ -10,35 +10,95 @@ import android.widget.TextView;
 
 import java.nio.ByteBuffer;
 
-public class RockPaperScissorsActivity extends AppCompatActivity {
-    Button rockButton;
-    Button paperButton;
-    Button scissorsButton;
-
+public class TicTacToeActivity extends AppCompatActivity {
+    Button[] buttons = new Button[9];
     ServerConnection sc;
     TextView message;
     byte[] uid;
+    int team;
+    char teamChar = ' ';
+    int prevMove;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_rock_paper_scissors);
-        message = findViewById(R.id.responseMessage);
+        setContentView(R.layout.activity_tic_tac_toe);
         sc = ServerConnection.getServerConnection();
-        rockButton = findViewById(R.id.rockbutton);
-        paperButton = findViewById(R.id.scissorsbutton);
-        scissorsButton = findViewById(R.id.paperbutton);
+        message = findViewById(R.id.responseMessage);
+        buttons[0] = findViewById(R.id.topleft);
+        buttons[1] = findViewById(R.id.top);
+        buttons[2] = findViewById(R.id.topright);
+        buttons[3] = findViewById(R.id.left);
+        buttons[4] = findViewById(R.id.middle);
+        buttons[5] = findViewById(R.id.right);
+        buttons[6] = findViewById(R.id.bottomleft);
+        buttons[7] = findViewById(R.id.bottom);
+        buttons[8] = findViewById(R.id.bottomright);
         uid = getIntent().getByteArrayExtra("uid");
         toggleButtons(false);
         sc.read((ByteBuffer buffer) -> {
-           handleResponse(buffer);
+            handleResponse(buffer);
         });
     }
 
-    private void toggleButtons(boolean status) {
-        rockButton.setEnabled(status);
-        paperButton.setEnabled(status);
-        scissorsButton.setEnabled(status);
+    private void refreshButtonsEnabled() {
+        for (int i = 0; i < buttons.length; i++) {
+            buttons[i].setEnabled(buttons[i].getText().toString().isEmpty());
+        }
+    }
+
+    private void toggleButtons(boolean state) {
+        for (int i = 0; i < buttons.length; i++) {
+            buttons[i].setEnabled(state);
+        }
+    }
+
+    public void clickTile(View view, int pos) {
+        prevMove = pos;
+        int[] arr = ServerConnection.prefixUID(new int[]{
+            RequestTypes.GAME_ACTION.getVal(),
+            RequestContexts.MAKE_MOVE.getVal(),
+            1,
+            pos,
+        }, uid);
+        sc.write(arr);
+        sc.read(this::handleResponse);
+    }
+
+    public void topleft(View view) {
+        clickTile(view, PayloadValues.MOVE_TOP_LEFT.getVal());
+    }
+
+    public void top(View view) {
+        clickTile(view, PayloadValues.MOVE_TOP.getVal());
+    }
+
+    public void topright(View view) {
+        clickTile(view, PayloadValues.MOVE_TOP_RIGHT.getVal());
+    }
+
+    public void left(View view) {
+        clickTile(view, PayloadValues.MOVE_LEFT.getVal());
+    }
+
+    public void middle(View view) {
+        clickTile(view, PayloadValues.MOVE_MIDDLE.getVal());
+    }
+
+    public void right(View view) {
+        clickTile(view, PayloadValues.MOVE_RIGHT.getVal());
+    }
+
+    public void bottomleft(View view) {
+        clickTile(view, PayloadValues.MOVE_BOTTOM_LEFT.getVal());
+    }
+
+    public void bottom(View view) {
+        clickTile(view, PayloadValues.MOVE_BOTTOM.getVal());
+    }
+
+    public void bottomright(View view) {
+        clickTile(view, PayloadValues.MOVE_BOTTOM_RIGHT.getVal());
     }
 
     public void handleResponse(ByteBuffer buffer) {
@@ -60,33 +120,43 @@ public class RockPaperScissorsActivity extends AppCompatActivity {
                 message.setText("Unknown or unused response");
             }
             if (context == ResponseContexts.GAME_ACTION.getVal()) {
+                buttons[prevMove].setText(String.valueOf(teamChar));
                 message.setText("Move made! Awaiting other player's move...");
             }
+            toggleButtons(false);
             if (!ServerConnection.s.isClosed()) {
                 sc.read((ByteBuffer buff) -> {
                     handleResponse(buff);
                 });
-                toggleButtons(false);
-            }
-            else {
-                return;
             }
         }
         if (status == ResponseTypes.UPDATE.getVal()) {
             if (context == ResponseContexts.START_GAME.getVal()) {
-                toggleButtons(true);
-                message.setText("Game start!");
+                team = payload[0];
+                teamChar = payload[0] == 1 ? 'X' : payload[0] == 2 ? 'O' : ' ';
+                message.setText("Game start! You are: " + teamChar);
+                refreshButtonsEnabled();
+                if (teamChar == 'O') {
+                    toggleButtons(false);
+                    sc.read((ByteBuffer buff) -> {
+                        handleResponse(buff);
+                    });
+                }
+            }
+            if (context == ResponseContexts.MOVE_MADE.getVal()) {
+                buttons[payload[0]].setText(String.valueOf(teamChar == 'X' ? 'O' : 'X'));
+                message.setText("Move made by opponent.");
+                refreshButtonsEnabled();
             }
             if (context == ResponseContexts.END_OF_GAME.getVal()) {
                 toggleButtons(false);
                 int winLoss = payload[0];
-                int opponentMove = payload[1];
-                String winLossMsg = (winLoss == 1 ? "Win!" : winLoss == 2 ? "Loss!" : "Tie!");
-                String opponentMoveMsg = "Opponent's Move: " + (opponentMove == 1 ? "Rock" : opponentMove == 2 ? "Paper" : "Scissors");
-
-                message.setText("GAME OVER\n" +winLossMsg + "\n" + opponentMoveMsg);
+                String winLossMsg = (winLoss == 1 ? "Win!" : winLoss == 2 ? "Lose!" : "Tie!");
+                buttons[payload[1]].setText(String.valueOf(prevMove == payload[1] ? teamChar : teamChar == 'X' ? 'O' : 'X'));
+                message.setText("GAME OVER\n" +winLossMsg);
             }
             if (context == ResponseContexts.OPPONENT_DISCONNECTED.getVal()) {
+                toggleButtons(false);
                 message.setText("Opponent disconnected! Please quit the game.");
             }
         }
@@ -114,35 +184,7 @@ public class RockPaperScissorsActivity extends AppCompatActivity {
         if (status == ResponseTypes.ACTION_OUT_OF_TURN.getVal()) {
             message.setText("Action out of turn");
         }
-    }
-
-    public void clickButton(View view, int move) {
-        rockButton.setEnabled(false);
-        scissorsButton.setEnabled(false);
-        paperButton.setEnabled(false);
-        int[] arr = ServerConnection.prefixUID(new int[]{
-            RequestTypes.GAME_ACTION.getVal(),
-            RequestContexts.MAKE_MOVE.getVal(),
-            1,
-            move,
-        }, uid);
-
-        sc.write(arr);
-        sc.read((ByteBuffer buffer) -> {
-            handleResponse(buffer);
-        });
-    }
-
-    public void rock(View view) {
-        clickButton(view, PayloadValues.MOVE_ROCK.getVal());
-    }
-
-    public void paper(View view) {
-        clickButton(view, PayloadValues.MOVE_PAPER.getVal());
-    }
-
-    public void scissors(View view) {
-        clickButton(view, PayloadValues.MOVE_SCISSORS.getVal());
+        buffer.clear();
     }
 
     public void quit(View view) {

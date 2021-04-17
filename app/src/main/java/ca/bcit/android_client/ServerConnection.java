@@ -1,62 +1,63 @@
 package ca.bcit.android_client;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.widget.TextView;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Serializable;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
-import ca.bcit.android_client.PayloadValues;
-import ca.bcit.android_client.RequestContexts;
-import ca.bcit.android_client.RequestTypes;
-import ca.bcit.android_client.ResponseContexts;
-import ca.bcit.android_client.ResponseTypes;
-
-import androidx.appcompat.app.AppCompatActivity;
-
-import static androidx.core.content.ContextCompat.startActivity;
-
 public class ServerConnection {
-    private String ipaddress;
-    private int port;
-    private final Context context;
-    private final Intent intent;
-    Socket s;
+    private static String ipaddress;
+    private static int port;
+    private static Context context;
+    private static Intent intent;
+    public static Socket s;
     DataInputStream in;
     DataOutputStream out;
     ByteBuffer buffer;
     static ServerConnection sc;
-    int uid;
+    static boolean voice;
+    static int gameId;
 
-    public ServerConnection(String ipaddress, int port, Context context, Intent intent) {
-        this.ipaddress = ipaddress;
-        this.port = port;
-        this.context = context;
-        this.intent = intent;
-        buffer = ByteBuffer.allocate(10);
+    public ServerConnection(String ipaddress, int port, Context context, Intent intent, boolean voice, int gameId) {
+        ServerConnection.ipaddress = ipaddress;
+        ServerConnection.port = port;
+        ServerConnection.context = context;
+        ServerConnection.intent = intent;
+        ServerConnection.voice = voice;
+        ServerConnection.gameId = gameId;
+        buffer = ByteBuffer.allocate(20);
         this.connect();
         sc = this;
     }
 
     public static ServerConnection getServerConnection() {
+        if (!s.isClosed()) {
+            return sc;
+        } else {
+            sc = new ServerConnection(ipaddress, port, context, intent, voice, gameId);
+        }
         return sc;
+    }
+
+    public static int[] prefixUID(int[] arr, byte[] uid) {
+        int[] newArr = new int[arr.length + 4];
+        for (int i = 0; i <= 3; i++) {
+            newArr[i] = uid[i];
+        }
+        for (int i = 4; i < newArr.length; i++) {
+            newArr[i] = arr[i-4];
+        }
+        return newArr;
     }
 
     public void connect() {
@@ -64,11 +65,25 @@ public class ServerConnection {
     }
 
     public void read(readCallback rc) {
+        if (s.isClosed()) {
+            return;
+        }
         new ReadQuery(rc).execute();
     }
 
     public void write(int[] arr) {
+        if (s.isClosed()) {
+            return;
+        }
         new WriteQuery(arr).execute();
+    }
+
+    public void disconnect() {
+        try {
+            s.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public interface readCallback {
@@ -98,7 +113,12 @@ public class ServerConnection {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            rc.doCallback(buffer);
+            try {
+                Log.w("Success", String.valueOf(success));
+                rc.doCallback(buffer);
+            } catch(Exception e) {
+                Log.e("Error", e.toString());
+            }
         }
     }
 
@@ -134,6 +154,8 @@ public class ServerConnection {
     }
 
     private class AsyncQuery extends AsyncTask<Void, Void, Boolean> {
+        byte[] uid;
+
         @Override
         protected Boolean doInBackground(Void... voids) {
             try {
@@ -146,9 +168,21 @@ public class ServerConnection {
                     RequestContexts.CONFIRM_RULESET.getVal(),
                     2,
                     PayloadValues.PROTOCOL_VERSION.getVal(),
-                    PayloadValues.ROCK_PAPER_SCISSORS_ID.getVal()
+                    gameId,
                 });
-                read((ByteBuffer buffer) -> {});
+                read((ByteBuffer buffer) -> {
+                    handleResponse(buffer);
+                    //if (uid > 0) {
+                        if (voice) {
+                            VoiceChat vc = new VoiceChat();
+                            vc.setIpAddress(ipaddress);
+                            vc.setPort(port);
+                            vc.start(this.uid);
+                        }
+                        intent.putExtra("uid", this.uid);
+                        context.startActivity(intent);
+                   // }
+                });
                 return true;
             } catch (IOException e) {
                 e.printStackTrace();
@@ -158,8 +192,29 @@ public class ServerConnection {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success) {
-                context.startActivity(intent);
+
+        }
+
+        public void handleResponse(ByteBuffer buffer) {
+            byte status = buffer.get(0);
+            byte context = buffer.get(1);
+            byte length = buffer.get(2);
+            byte[] uid = { buffer.get(3), buffer.get(4), buffer.get(5), buffer.get(6) };
+            buffer.order(ByteOrder.BIG_ENDIAN);
+            Log.w("status", String.valueOf(status));
+            Log.w("context", String.valueOf(context));
+            Log.w("length", String.valueOf(length));
+            Log.w("uid0", String.valueOf(uid[0]));
+            Log.w("uid1", String.valueOf(uid[1]));
+            Log.w("uid2", String.valueOf(uid[2]));
+            Log.w("uid3", String.valueOf(uid[3]));
+
+            if (status == ResponseTypes.SUCCESS.getVal()) {
+                if (context == ResponseContexts.CONFIRMATION.getVal()) {
+                    if (length >= 4) {
+                        this.uid = uid;
+                    }
+                }
             }
         }
     }
