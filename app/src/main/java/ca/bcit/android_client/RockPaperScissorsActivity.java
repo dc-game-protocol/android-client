@@ -74,7 +74,7 @@ public class RockPaperScissorsActivity extends AppCompatActivity {
                 toggleButtons(false);
                 int winLoss = payload[0];
                 int opponentMove = payload[1];
-                String winLossMsg = (winLoss == 1 ? "Win!" : winLoss == 2 ? "Tie!" : "Loss!");
+                String winLossMsg = (winLoss == 1 ? "Win!" : winLoss == 2 ? "Loss!" : "Tie!");
                 String opponentMoveMsg = "Opponent's Move: " + (opponentMove == 1 ? "Rock" : opponentMove == 2 ? "Paper" : "Scissors");
 
                 message.setText("GAME OVER\n" +winLossMsg + "\n" + opponentMoveMsg);

@@ -12,6 +12,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 
 public class VoiceChat {
     private static final int audioSource = MediaRecorder.AudioSource.VOICE_COMMUNICATION;
@@ -26,6 +27,7 @@ public class VoiceChat {
     private static boolean activeRecording;
     private static boolean activeListening;
     DatagramSocket socket;
+    byte[] uid;
 
     public void setIpAddress(String ipAddress) {
         VoiceChat.ipAddress = ipAddress;
@@ -38,12 +40,13 @@ public class VoiceChat {
         activeListening = false;
     }
 
-    public void start() {
+    public void start(byte[] uid) {
         try {
             socket = new DatagramSocket();
         } catch (SocketException e) {
             e.printStackTrace();
         }
+        this.uid = uid;
         startRecording();
         startListening();
     }
@@ -59,12 +62,21 @@ public class VoiceChat {
                             channelConfig,
                             audioFormat,
                             bufferSizeInBytes);
-                    byte[] buffer = new byte[buffSize];
+                    //byte[] buffer = new byte[buffSize];
                     try {
                         ar.startRecording();
+                        int order = 0;
                         while (activeRecording) {
-                            int count = ar.read(buffer, 0, buffSize);
-                            DatagramPacket packet = new DatagramPacket(buffer, count, InetAddress.getByName(ipAddress), port);
+                            ByteBuffer bytebuffer = ByteBuffer.allocate(buffSize);
+                            bytebuffer.putInt(order);
+                            bytebuffer.put(uid[0]);
+                            bytebuffer.put(uid[1]);
+                            bytebuffer.put(uid[2]);
+                            bytebuffer.put(uid[3]);
+                            byte[] buffer = bytebuffer.array();
+                            order++;
+                            int count = ar.read(buffer, 8, buffSize - 8);
+                            DatagramPacket packet = new DatagramPacket(buffer, count + 8, InetAddress.getByName(ipAddress), port);
                             socket.send(packet);
                             Log.w("Sent...", String.valueOf(count));
                         }
@@ -107,7 +119,7 @@ public class VoiceChat {
                             DatagramPacket packet = new DatagramPacket(buffer, buffSize);
                             socket.receive(packet);
                             Log.w("Received...", String.valueOf(packet.getLength()));
-                            at.write(packet.getData(), 0, buffSize);
+                            at.write(packet.getData(), 8, buffSize - 8);
                         }
                         at.stop();
                         at.release();

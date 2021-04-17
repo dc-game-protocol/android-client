@@ -169,7 +169,7 @@ public class ServerConnection {
                             VoiceChat vc = new VoiceChat();
                             vc.setIpAddress(ipaddress);
                             vc.setPort(port);
-                            vc.start();
+                            vc.start(this.uid);
                         }
                         intent.putExtra("uid", this.uid);
                         context.startActivity(intent);
