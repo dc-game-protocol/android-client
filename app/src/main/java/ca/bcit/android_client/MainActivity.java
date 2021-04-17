@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
         voice = false;
     }
 
-    private int connectToServer(Intent intent) {
+    private int connectToServer(Intent intent, int gameId) {
         String ipaddress = ipEditText.getText().toString();
         String portText = portEditText.getText().toString();
         if (ipaddress.equals("") || portText.equals("")) {
@@ -41,13 +41,13 @@ public class MainActivity extends AppCompatActivity {
         } catch (NumberFormatException e) {
             return -1;
         }
-        sc = new ServerConnection(ipaddress, port, MainActivity.this, intent, voice);
+        sc = new ServerConnection(ipaddress, port, MainActivity.this, intent, voice, gameId);
         return 1;
     }
 
     public void startRockpaperScissors (View view){
         Intent intent = new Intent(this, RockPaperScissorsActivity.class);
-        int connectionStatus = connectToServer(intent);
+        int connectionStatus = connectToServer(intent, PayloadValues.ROCK_PAPER_SCISSORS_ID.getVal());
         if (connectionStatus <= 0) {
             return;
         }
@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void startTicTacToe (View view){
         Intent intent = new Intent(this, TicTacToeActivity.class);
-        int connectionStatus = connectToServer(intent);
+        int connectionStatus = connectToServer(intent, PayloadValues.TIC_TAC_TOE_ID.getVal());
         if (connectionStatus <= 0) {
             return;
         }

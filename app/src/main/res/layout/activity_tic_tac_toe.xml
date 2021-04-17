@@ -146,6 +146,6 @@
         android:layout_height="wrap_content"
         android:ellipsize="none"
         android:scrollHorizontally="false"
-        android:text="Connected"
+        android:text="Awaiting other player..."
         android:textSize="28dp" />
 </LinearLayout>

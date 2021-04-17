@@ -3,6 +3,7 @@ package ca.bcit.android_client;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -16,6 +17,7 @@ public class TicTacToeActivity extends AppCompatActivity {
     byte[] uid;
     int team;
     char teamChar = ' ';
+    int prevMove;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +35,10 @@ public class TicTacToeActivity extends AppCompatActivity {
         buttons[7] = findViewById(R.id.bottom);
         buttons[8] = findViewById(R.id.bottomright);
         uid = getIntent().getByteArrayExtra("uid");
+        toggleButtons(false);
+        sc.read((ByteBuffer buffer) -> {
+            handleResponse(buffer);
+        });
     }
 
     private void refreshButtonsEnabled() {
@@ -41,18 +47,19 @@ public class TicTacToeActivity extends AppCompatActivity {
         }
     }
 
-    private void turnOffAllButtons() {
+    private void toggleButtons(boolean state) {
         for (int i = 0; i < buttons.length; i++) {
-            buttons[i].setEnabled(false);
+            buttons[i].setEnabled(state);
         }
     }
 
     public void clickTile(View view, int pos) {
+        prevMove = pos;
         int[] arr = ServerConnection.prefixUID(new int[]{
             RequestTypes.GAME_ACTION.getVal(),
             RequestContexts.MAKE_MOVE.getVal(),
             1,
-            PayloadValues.MOVE_ROCK.getVal(),
+            pos,
         }, uid);
         sc.write(arr);
         sc.read(this::handleResponse);
@@ -104,7 +111,7 @@ public class TicTacToeActivity extends AppCompatActivity {
         }
         if (status == ResponseTypes.SUCCESS.getVal()) {
             if (context == ResponseContexts.CONFIRMATION.getVal()) {
-                message.setText("Valid game!");
+                message.setText("Valid game! Awaiting other player...");
             }
             if (context == ResponseContexts.INFORMATION.getVal()) {
                 message.setText("Unknown or unused response");
@@ -113,12 +120,11 @@ public class TicTacToeActivity extends AppCompatActivity {
                 message.setText("Unknown or unused response");
             }
             if (context == ResponseContexts.GAME_ACTION.getVal()) {
-                buttons[payload[0]].setText(teamChar);
-                message.setText("Awaiting other player's move...");
+                buttons[prevMove].setText(String.valueOf(teamChar));
+                message.setText("Move made! Awaiting other player's move...");
             }
-            turnOffAllButtons();
+            toggleButtons(false);
             sc.read((ByteBuffer buff) -> {
-                refreshButtonsEnabled();
                 handleResponse(buff);
             });
         }
@@ -126,22 +132,31 @@ public class TicTacToeActivity extends AppCompatActivity {
             if (context == ResponseContexts.START_GAME.getVal()) {
                 team = payload[0];
                 teamChar = payload[0] == 1 ? 'X' : payload[0] == 2 ? 'O' : ' ';
-                message.setText("Starting game...");
+                message.setText("Game start! You are: " + teamChar);
+                refreshButtonsEnabled();
+                if (teamChar == 'O') {
+                    toggleButtons(false);
+                    sc.read((ByteBuffer buff) -> {
+                        handleResponse(buff);
+                    });
+                }
             }
             if (context == ResponseContexts.MOVE_MADE.getVal()) {
-                buttons[payload[0]].setText(teamChar == 'X' ? 'O' : 'X');
+                buttons[payload[0]].setText(String.valueOf(teamChar == 'X' ? 'O' : 'X'));
                 message.setText("Move made by opponent.");
+                refreshButtonsEnabled();
             }
             if (context == ResponseContexts.END_OF_GAME.getVal()) {
+                toggleButtons(false);
                 int winLoss = payload[0];
-                String winLossMsg = (winLoss == 1 ? "Win!" : winLoss == 2 ? "Tie!" : "Loss!");
+                String winLossMsg = (winLoss == 1 ? "Win!" : winLoss == 2 ? "Lose!" : "Tie!");
 
                 message.setText("GAME OVER\n" +winLossMsg);
             }
             if (context == ResponseContexts.OPPONENT_DISCONNECTED.getVal()) {
+                toggleButtons(false);
                 message.setText("Opponent disconnected! Please quit the game.");
             }
-            refreshButtonsEnabled();
         }
         if (status == ResponseTypes.INVALID_REQUEST.getVal()) {
             message.setText("Invalid Request");

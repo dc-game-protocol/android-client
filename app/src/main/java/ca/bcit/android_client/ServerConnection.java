@@ -26,13 +26,15 @@ public class ServerConnection {
     ByteBuffer buffer;
     static ServerConnection sc;
     static boolean voice;
+    static int gameId;
 
-    public ServerConnection(String ipaddress, int port, Context context, Intent intent, boolean voice) {
+    public ServerConnection(String ipaddress, int port, Context context, Intent intent, boolean voice, int gameId) {
         ServerConnection.ipaddress = ipaddress;
         ServerConnection.port = port;
         ServerConnection.context = context;
         ServerConnection.intent = intent;
         ServerConnection.voice = voice;
+        ServerConnection.gameId = gameId;
         buffer = ByteBuffer.allocate(20);
         this.connect();
         sc = this;
@@ -42,7 +44,7 @@ public class ServerConnection {
         if (s.isConnected()) {
             return sc;
         } else {
-            sc = new ServerConnection(ipaddress, port, context, intent, voice);
+            sc = new ServerConnection(ipaddress, port, context, intent, voice, gameId);
         }
         return sc;
     }
@@ -151,7 +153,7 @@ public class ServerConnection {
         @Override
         protected Boolean doInBackground(Void... voids) {
             try {
-                InetSocketAddress isa = new InetSocketAddress(ipaddress, port);
+                InetSocketAddress isa = new InetSocketAddress("192.168.1.80", 2034);
                 s = new Socket();
                 s.connect(isa, 1000);
                 write(new int[]{
@@ -160,15 +162,15 @@ public class ServerConnection {
                     RequestContexts.CONFIRM_RULESET.getVal(),
                     2,
                     PayloadValues.PROTOCOL_VERSION.getVal(),
-                    PayloadValues.ROCK_PAPER_SCISSORS_ID.getVal()
+                    gameId,
                 });
                 read((ByteBuffer buffer) -> {
                     handleResponse(buffer);
                     //if (uid > 0) {
                         if (voice) {
                             VoiceChat vc = new VoiceChat();
-                            vc.setIpAddress(ipaddress);
-                            vc.setPort(port);
+                            vc.setIpAddress("192.168.1.80");
+                            vc.setPort(2034);
                             vc.start(this.uid);
                         }
                         intent.putExtra("uid", this.uid);

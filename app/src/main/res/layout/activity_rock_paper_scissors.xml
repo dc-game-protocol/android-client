@@ -65,7 +65,7 @@
         android:layout_marginTop="200dp"
         android:ellipsize="none"
         android:scrollHorizontally="false"
-        android:text="Awaiting other players..."
+        android:text="Awaiting other player..."
         android:textSize="28sp"
         app:layout_constraintHorizontal_bias="0.455"
         app:layout_constraintLeft_toLeftOf="parent"
