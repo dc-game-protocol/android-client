@@ -152,7 +152,7 @@ public class TicTacToeActivity extends AppCompatActivity {
                 toggleButtons(false);
                 int winLoss = payload[0];
                 String winLossMsg = (winLoss == 1 ? "Win!" : winLoss == 2 ? "Lose!" : "Tie!");
-                buttons[payload[1]].setText(String.valueOf(teamChar == 'X' ? 'O' : 'X'));
+                buttons[payload[1]].setText(String.valueOf(prevMove == payload[1] ? teamChar : teamChar == 'X' ? 'O' : 'X'));
                 message.setText("GAME OVER\n" +winLossMsg);
             }
             if (context == ResponseContexts.OPPONENT_DISCONNECTED.getVal()) {
