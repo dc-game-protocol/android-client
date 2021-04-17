@@ -3,6 +3,7 @@ package ca.bcit.android_client;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -16,7 +17,7 @@ public class RockPaperScissorsActivity extends AppCompatActivity {
 
     ServerConnection sc;
     TextView message;
-    int uid;
+    byte[] uid;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,7 +28,17 @@ public class RockPaperScissorsActivity extends AppCompatActivity {
         rockButton = findViewById(R.id.rockbutton);
         paperButton = findViewById(R.id.scissorsbutton);
         scissorsButton = findViewById(R.id.paperbutton);
-        uid = getIntent().getIntExtra("uid", 0);
+        uid = getIntent().getByteArrayExtra("uid");
+        toggleButtons(false);
+        sc.read((ByteBuffer buffer) -> {
+           handleResponse(buffer);
+        });
+    }
+
+    private void toggleButtons(boolean status) {
+        rockButton.setEnabled(status);
+        paperButton.setEnabled(status);
+        scissorsButton.setEnabled(status);
     }
 
     public void handleResponse(ByteBuffer buffer) {
@@ -38,10 +49,10 @@ public class RockPaperScissorsActivity extends AppCompatActivity {
         for (int i = 0; i < length; i++) {
             payload[i] = buffer.get(3 + i);
         }
-
+        toggleButtons(true);
         if (status == ResponseTypes.SUCCESS.getVal()) {
             if (context == ResponseContexts.CONFIRMATION.getVal()) {
-                message.setText("Valid game!");
+                message.setText("Valid game! Awaiting other player...");
             }
             if (context == ResponseContexts.INFORMATION.getVal()) {
                 message.setText("Unknown or unused response");
@@ -50,15 +61,17 @@ public class RockPaperScissorsActivity extends AppCompatActivity {
                 message.setText("Unknown or unused response");
             }
             if (context == ResponseContexts.GAME_ACTION.getVal()) {
-                message.setText("Awaiting other player's move...");
+                message.setText("Move made! Awaiting other player's move...");
             }
             sc.read(this::handleResponse);
         }
         if (status == ResponseTypes.UPDATE.getVal()) {
             if (context == ResponseContexts.START_GAME.getVal()) {
+                toggleButtons(true);
                 message.setText("Starting game...");
             }
             if (context == ResponseContexts.END_OF_GAME.getVal()) {
+                toggleButtons(false);
                 int winLoss = payload[0];
                 int opponentMove = payload[1];
                 String winLossMsg = (winLoss == 1 ? "Win!" : winLoss == 2 ? "Tie!" : "Loss!");
@@ -108,7 +121,9 @@ public class RockPaperScissorsActivity extends AppCompatActivity {
         }, uid);
 
         sc.write(arr);
-        sc.read(this::handleResponse);
+        sc.read((ByteBuffer buffer) -> {
+            handleResponse(buffer);
+        });
     }
 
     public void rock(View view) {

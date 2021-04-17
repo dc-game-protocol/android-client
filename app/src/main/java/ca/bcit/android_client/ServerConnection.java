@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
 public class ServerConnection {
@@ -32,7 +33,7 @@ public class ServerConnection {
         ServerConnection.context = context;
         ServerConnection.intent = intent;
         ServerConnection.voice = voice;
-        buffer = ByteBuffer.allocate(130);
+        buffer = ByteBuffer.allocate(20);
         this.connect();
         sc = this;
     }
@@ -46,12 +47,10 @@ public class ServerConnection {
         return sc;
     }
 
-    public static int[] prefixUID(int[] arr, int uid) {
+    public static int[] prefixUID(int[] arr, byte[] uid) {
         int[] newArr = new int[arr.length + 4];
-        for (int i = 3; i >= 0; i--) {
-            int thisByte = uid & 0b1111;
-            newArr[i] = thisByte;
-            uid <<= 4;
+        for (int i = 0; i <= 3; i++) {
+            newArr[i] = uid[i];
         }
         for (int i = 4; i < newArr.length; i++) {
             newArr[i] = arr[i-4];
@@ -107,6 +106,7 @@ public class ServerConnection {
         @Override
         protected void onPostExecute(Boolean success) {
             try {
+                Log.w("Success", String.valueOf(success));
                 rc.doCallback(buffer);
             } catch(Exception e) {
                 Log.e("Error", e.toString());
@@ -146,7 +146,7 @@ public class ServerConnection {
     }
 
     private class AsyncQuery extends AsyncTask<Void, Void, Boolean> {
-        int uid;
+        byte[] uid;
 
         @Override
         protected Boolean doInBackground(Void... voids) {
@@ -191,7 +191,15 @@ public class ServerConnection {
             byte status = buffer.get(0);
             byte context = buffer.get(1);
             byte length = buffer.get(2);
-            int uid = buffer.getInt(3);
+            byte[] uid = { buffer.get(3), buffer.get(4), buffer.get(5), buffer.get(6) };
+            buffer.order(ByteOrder.BIG_ENDIAN);
+            Log.w("status", String.valueOf(status));
+            Log.w("context", String.valueOf(context));
+            Log.w("length", String.valueOf(length));
+            Log.w("uid0", String.valueOf(uid[0]));
+            Log.w("uid1", String.valueOf(uid[1]));
+            Log.w("uid2", String.valueOf(uid[2]));
+            Log.w("uid3", String.valueOf(uid[3]));
 
             if (status == ResponseTypes.SUCCESS.getVal()) {
                 if (context == ResponseContexts.CONFIRMATION.getVal()) {

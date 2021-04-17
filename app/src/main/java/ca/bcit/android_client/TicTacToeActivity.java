@@ -13,7 +13,7 @@ public class TicTacToeActivity extends AppCompatActivity {
     Button[] buttons = new Button[9];
     ServerConnection sc;
     TextView message;
-    int uid;
+    byte[] uid;
     int team;
     char teamChar = ' ';
 
@@ -32,7 +32,7 @@ public class TicTacToeActivity extends AppCompatActivity {
         buttons[6] = findViewById(R.id.bottomleft);
         buttons[7] = findViewById(R.id.bottom);
         buttons[8] = findViewById(R.id.bottomright);
-        uid = getIntent().getIntExtra("uid", 0);
+        uid = getIntent().getByteArrayExtra("uid");
     }
 
     private void refreshButtonsEnabled() {
